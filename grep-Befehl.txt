@@ -1,2 +1,0 @@
- grep -o -E  "^(kauf(t|te|test|ten|tet|en|st)?\s)" Schreibtisch/tiger2.txt
-
