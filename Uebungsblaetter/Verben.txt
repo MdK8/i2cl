@@ -1,0 +1,4 @@
+bake^ed#
+walk^ed#
+close^ed#
+open^ed#
