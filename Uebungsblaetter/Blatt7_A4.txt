@@ -1,0 +1,102 @@
+Folgender Befehl druckt die siebte und elfte Spalte unseres durch Tabs getrennten Korpus in die Datei ouput.txt für weitere Verwendung:
+
+awk -F '\t' '{print $7 "\t" $11}' tiger_merkmale.txt > output.txt
+
+Die Datei output.txt beschreibt also jeweils die Beziehung zwischen grammatischer Funktion und dem entsprechenden Muster. Im nächsten Schritt gilt es diejenigen Zeilen auszufiltern, die die gewünschten grammatischen Funktionen SB und AO mit Merkmalsmustern in Verbindung setzen.
+
+Hierfür erweist sich das grep Tool als hilfreich. Mit folgenden Befehlen werden aus der Datei output.txt zu den beiden Funktionen SB und AO Merkmalsmusterlisten gewonnen und in gleichnamigen Dateien abgelegt:
+
+grep -E "SB" output.txt > tmp.txt; awk -F '\t' '{print $1}' tmp.txt > SB.txt
+grep -E "OA" output.txt > tmp.txt; awk -F '\t' '{print $1}' tmp.txt > OA.txt
+
+
+Nun interessieren uns jedoch nur Merkmalsmuster, die mindestens zwanzig mal auftreten. Zu diesem Zweck sortieren wir nun zunächst die Musterlisten:
+
+sort -o SB.txt SB.txt
+sort -o OA.txt OA.txt
+
+Nun interessiert uns die Anzahl der Vorkommen jedes Merkmalsmusters. Über das uniq Tool können wir die sortierten Listen nun kompakt darstellen. Im Anschluss werden die Listen erneut sortiert, dieses mal nach Anzahl der Vorkommen der Muster:
+
+uniq -c SB.txt tmp.txt; cat tmp.txt > SB.txt; sort -o SB.txt SB.txt
+uniq -c OA.txt tmp.txt; cat tmp.txt > OA.txt; sort -o OA.txt OA.txt
+
+Nun gilt es lediglich alle unwichtigen Merkmalsmuster zu ignorieren. Das kann man über reguläre Ausdrücke realisieren. \s[0-1]?[0-9]\s matched alle separaten Vorkommen von Zahlen, die geringer als zwanzig sind. Diese Zeilen interessieren uns aber gerade nicht, weswegen wir die -v (invert match) Option von grep nutzen. 
+
+grep -v -E "\s[0-1]?[0-9]\s" SB.txt 
+grep -v -E "\s[0-1]?[0-9]\s" OA.txt 
+
+Das Ergebnis der Befehle sind nun Listen aller mehr als zwanzig Mal vorkommenden Merkmalsmuster, die SB bzw. OA zuzuordnen sind.
+
+SB:
+
+  20 number=pl|person=3|tense=past|mood=subj
+  22 case=nom|number=sg|gender=neut|degree=pos
+  29 case=nom|number=sg|gender=fem|person=1
+  30 case=*|number=*|gender=fem
+  31 number=sg|person=3|tense=past|mood=subj
+  35 case=nom|number=sg|gender=masc|degree=pos
+  43 case=nom|number=pl|gender=*|person=2
+  49 number=pl|person=3|tense=past|mood=ind
+  57 case=nom|number=sg|gender=*|person=2
+  67 case=nom|number=pl|gender=neut|person=3
+  89 case=dat|number=sg|gender=neut
+  89 case=nom|number=sg|gender=masc|person=1
+ 105 number=sg|person=3|tense=pres|mood=subj
+ 111 case=nom|number=pl|gender=fem|person=3
+ 111 number=sg|person=3|tense=past|mood=ind
+ 158 case=*|number=*|gender=*
+ 159 case=dat|number=sg|gender=masc
+ 163 number=pl|person=3|tense=pres|mood=ind
+ 263 case=nom|number=pl|gender=masc|person=3
+ 313 case=*|number=*|gender=neut
+ 558 number=sg|person=3|tense=pres|mood=ind
+ 594 case=nom|number=sg|gender=*|person=1
+ 926 case=nom|number=pl|gender=*|person=1
+1033 case=nom|number=sg|gender=fem|person=3
+12402 case=nom|number=sg|gender=fem
+1258 case=nom|number=pl|gender=*|person=3
+13897 case=nom|number=sg|gender=masc
+1500 case=nom|number=sg|gender=neut|person=3
+1793 case=nom|number=pl|gender=*
+1838 _
+2132 case=nom|number=pl|gender=neut
+3006 case=nom|number=sg|gender=masc|person=3
+4264 case=nom|number=pl|gender=fem
+4478 case=nom|number=sg|gender=*
+6620 case=nom|number=pl|gender=masc
+7647 case=nom|number=sg|gender=neut
+
+OA:
+
+  21 case=*|number=*|gender=masc
+  21 case=acc|number=*|gender=neut
+  28 case=acc|number=pl|gender=neut|person=3
+  28 case=nom|number=sg|gender=neut|person=3
+  29 case=acc|number=*|gender=masc
+  34 case=acc|number=pl|gender=masc|person=3
+  35 case=acc|number=pl|gender=fem|person=3
+  38 case=acc|number=sg|person=1
+  39 case=nom|number=sg|gender=masc
+  42 case=acc|number=pl|person=1
+  49 case=acc|number=sg|gender=*|person=1
+  51 case=acc|number=pl|gender=*|person=3
+  71 case=acc|number=*|gender=*|person=3
+  77 case=acc|number=pl|gender=*|person=1
+  88 case=acc|number=sg|gender=fem|person=3
+  94 case=*|number=*|gender=fem
+ 126 _
+ 200 case=*|number=*|gender=*
+ 231 case=acc|number=sg|gender=masc|person=3
+ 238 case=acc|number=sg|gender=*
+ 376 case=acc|number=pl|gender=*
+ 404 case=acc|number=sg|gender=neut|person=3
+ 468 case=*|number=*|gender=neut
+1473 case=acc|number=pl|gender=neut
+1478 case=acc|number=pl|person=3
+2565 case=acc|number=pl|gender=masc
+3220 case=acc|number=sg|person=3
+3437 case=acc|number=pl|gender=fem
+4628 case=acc|number=sg|gender=neut
+5496 case=acc|number=sg|gender=masc
+7562 case=acc|number=sg|gender=fem
+
