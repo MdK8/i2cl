@@ -1,0 +1,49 @@
+(a)
+
+Zunächst konstruiere man reguläre Ausdrücke um die drei Merkmale zu charakterisieren:
+
+Merkmal						Regex
+Wort w Artikel?					"\sART"
+Wort w+1 großgeschrieben?			"^\w+\t[A-Z]"
+Wort w hat -er/-es/-e/-en/-em Endung?		"^\w+(er|es|e|en|em)\t"
+
+Nun gilt es diese Ausdrücke geeignet durch Pipelining den Merkmalen eines Ereignisses entsprechend zu verketten:
+
+Merkmalsmuster					Befehl
+<-,-,->						grep -v -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t"
+<-,-,+>						grep -v -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t"
+<-,+,->						grep -v -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t"
+<-,+,+>						grep -v -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t"
+<+,-,->						grep -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t"
+<+,-,+>						grep -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t"
+<+,+,->						grep -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t"
+<+,+,+>						grep -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t"
+
+(b)
+
+Man kann sed mit dem "s" Befehl verwenden, um das Ende einer Zeile $ durch eine entsprechende Klassifizierung zu ersetzen.
+Es bietet sich somit folgende Vorgehensweise an: Der Reihenfolge nach im Korpus nach den Merkmalsmustern suchen, eine Klassifikation vornehmen und die Ergebniszeilen in einer Datei akkumulieren. Realisiert wird diese durch die Befehlsketten:
+
+Merkmalsmuster					Befehl
+<-,-,->						grep -v -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+<-,-,+>						grep -v -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+<-,+,->						grep -v -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+<-,+,+>						grep -v -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  ADJA/g" >> tiger_bigram_ADJA.txt
+<+,-,->						grep -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NichtKlassifizierbar/g" >> tiger_bigram_ADJA.txt
+<+,-,+>						grep -E "\sART" tiger_bigram.txt | grep -v -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+<+,+,->						grep -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -v -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+<+,+,+>						grep -E "\sART" tiger_bigram.txt | grep -E "^\w+\t[A-Z]" | grep -E "^\w+(er|es|e|en|em)\t" | sed "s/.*/&  NADJA/g" >> tiger_bigram_ADJA.txt
+
+Anmerkung zum sed Befehl: leider unterstützt sed keine Tabs in der Form \t. Deswegen wurde ein Tab über die entsprechende Keyboard Tastenkombination im Terminal erzeugt.
+Anmerkung zum Fall <+,-,->: aufgrund des Sparse-Data Problems welches in diesem Fall vorliegt kann der Klassifikator keine Entscheidung treffen.
+
+Die Datei tiger_bigram_ADJA.txt enthält nun den um eine zusätzliche Spalte erweiterten Korpus.
+
+(c)
+
+cut -f 3,4 tiger_bigram_ADJA.txt > tiger_bigram_ADJA_cut.txt;
+grep -v -E "^(ADJA)\t" tiger_bigram_ADJA_cut.txt | while read -r line; do echo "NADJA\t" >> tiger_bigram_ADJA_simple.txt; done;
+cut -d '\s' -f 2 tiger_bigram_ADJA_cut.txt > tmp.txt;
+paste tmp.txt tiger_bigram_ADJA_simple.txt > tiger_bigram_ADJA_res.txt;
+
+tiger_bigram_ADJA_res.txt enthält nun die Paare aus Goldstandard und Klassifikation. Die statistische Analyse ist trivial.
